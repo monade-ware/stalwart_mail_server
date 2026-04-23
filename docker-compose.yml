@@ -1,35 +1,33 @@
 
-
 services:
   stalwart:
     build:
       context: .
-    container_name: stalwart-mail
+    container_name: stalwart
     restart: unless-stopped
-
-    ports:
-      - "443:443"      # HTTPS / WebAdmin
-      - "25:25"        # SMTP
-      - "110:110"      # POP3
-      - "587:587"      # SMTP Submission
-      - "465:465"      # SMTPS
-      - "143:143"      # IMAP
-      - "993:993"      # IMAPS
-      - "995:995"      # POP3S
-      - "4190:4190"    # ManageSieve
-      - "8080:8080"    # HTTP API / Health
-
-    volumes:
-      - ./config.toml:/etc/stalwart/config.toml
-      - stalwart-data:/var/lib/stalwart
-
+    networks:
+      - stalwart-network
     environment:
+      # Set your recovery password here directly for the initial setup
       - STALWART_RECOVERY_ADMIN=${STALWART_RECOVERY_ADMIN}
-      - STALWART_RECOVERY_MODE=${STALWART_RECOVERY_MODE}
+    ports:
+      - "25:25"     # SMTP
+      - "465:465"   # SMTPS
+      - "587:587"   # Submission
+      - "143:143"   # IMAP
+      - "993:993"   # IMAPS
+      - "110:110"   # POP3
+      - "995:995"   # POP3S
+      - "443:443"   # HTTPS / Web Interface
+      - "8080:8080" # HTTP / Management / Setup
+      - "4190:4190"    # ManageSieve
+    volumes:
+      # Map the ENTIRE stalwart directory to persist config, DB, and certificates
+      - ./stalwart-data:/opt/stalwart-mail
+    # Use the correct internal path for the configuration file
+    command: ["--config", "/opt/stalwart-mail/etc/config.toml"]
 
-    # Override default command (which looks for config.json) to use config.toml
-    command: ["--config", "/etc/stalwart/config.toml"]
+networks:
+  stalwart-network:
+    driver: bridge
 
-volumes:
-  stalwart-data:
-    name: stalwart-data
